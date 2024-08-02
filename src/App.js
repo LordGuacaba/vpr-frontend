@@ -1,13 +1,14 @@
 import './App.css';
 import { useState } from 'react';
 import axios from "axios";
-import { Link } from '@mui/material';
+import { Button } from '@mui/material';
 
 function App() {
 
   const [outputName, setOutputName] = useState("")
   const [file, setFile] = useState()
-  const [link, setLink] = useState("")
+  const [downloadLink, setDownloadLink] = useState("")
+  const [downloadReady, setDownloadReady] = useState(false)
   const baseUrl = "http://localhost:8000";
 
   const handleAddFile = e => {
@@ -18,14 +19,32 @@ function App() {
     setOutputName(e.target.value)
   }
 
-  const removeReferences = () => {
-    URL.revokeObjectURL(link)
-    setLink("")
+  const handleDownload = () => {
+    const link = document.createElement('a')
+    link.href = downloadLink
+    link.setAttribute('download', `${outputName || "expanded"}.pptx`)
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadLink)
+    setDownloadLink("")
+    setDownloadReady(false)
   }
 
-  const deleteFile = filename => {
-    axios.delete(`${baseUrl}/presentation/${filename}`)
-    .catch(error => console.error("GetError:", error))
+  const getCaptions = filename => {
+    if (downloadLink) {
+      URL.revokeObjectURL(downloadLink)
+    }
+    axios.get(`${baseUrl}/presentation/${filename}`, {responseType: 'blob'})
+    .then(response => {
+      if (response.status === 200) {
+        setDownloadLink(URL.createObjectURL(response.data))
+        setDownloadReady(true)
+        axios.delete(`${baseUrl}/presentation/${outputName || "expanded"}`)
+        .catch(error => console.error("DeleteErr:", error))
+      }
+    })
+    .catch(error => console.error("Error:", error))
   }
 
   const handleFileSubmission = e => {
@@ -33,16 +52,14 @@ function App() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileName', file.name);
-    console.log("test")
     const config = {
       headers: {
         'content-type': 'multipart/form-data',
       },
     };
     axios.post(`${baseUrl}/create?name=${outputName}`, formData, config)
-    .then(response => setLink(URL.createObjectURL(response.data)))
     .catch(error => console.error("Error: ", error))
-    .finally(deleteFile(outputName || "expanded"))
+    .finally(() => getCaptions(outputName || "expanded"))
   }
 
   return (
@@ -54,7 +71,7 @@ function App() {
         <input type="text" onChange={handleNameChange} />
         <button type="submit">Create Powerpoint</button>
       </form>
-      <Link href={link} download={`${outputName || "expanded"}.pptx`} onClick={removeReferences}>Download Result</Link>
+      <Button disabled={!downloadReady} onClick={handleDownload}>Download</Button>
     </div>
   );
 }
