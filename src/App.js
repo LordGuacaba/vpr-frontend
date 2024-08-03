@@ -1,13 +1,15 @@
 import './App.css';
 import { useState } from 'react';
 import axios from "axios";
-import { Button } from '@mui/material';
+import { Button, Typography } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton'
 
 function App() {
 
   const [outputName, setOutputName] = useState("")
   const [file, setFile] = useState()
   const [downloadLink, setDownloadLink] = useState("")
+  const [loading, setLoading] = useState(false)
   const [downloadReady, setDownloadReady] = useState(false)
   const baseUrl = "http://localhost:8000";
 
@@ -39,9 +41,12 @@ function App() {
     .then(response => {
       if (response.status === 200) {
         setDownloadLink(URL.createObjectURL(response.data))
+        setLoading(false)
         setDownloadReady(true)
         axios.delete(`${baseUrl}/presentation/${outputName || "expanded"}`)
         .catch(error => console.error("DeleteErr:", error))
+      } else {
+        setLoading(false)
       }
     })
     .catch(error => console.error("Error:", error))
@@ -49,6 +54,7 @@ function App() {
 
   const handleFileSubmission = e => {
     e.preventDefault();
+    setLoading(true)
     const formData = new FormData();
     formData.append('file', file);
     formData.append('fileName', file.name);
@@ -64,14 +70,14 @@ function App() {
 
   return (
     <div className="App">
-      <h1>Visual Packet Reader</h1>
+      <Typography variant={'h2'}>Visual Packet Reader</Typography>
       <form onSubmit={handleFileSubmission}>
-        <h2>File submission</h2>
+        <Typography variant='h6'>File Submission</Typography>
         <input type="file" onChange={handleAddFile} />
         <input type="text" onChange={handleNameChange} />
-        <button type="submit">Create Powerpoint</button>
+        <Button variant="contained" type="submit">Create Powerpoint</Button>
       </form>
-      <Button disabled={!downloadReady} onClick={handleDownload}>Download</Button>
+      <LoadingButton variant="outlined" loading={loading} disabled={!downloadReady} onClick={handleDownload}>Download</LoadingButton>
     </div>
   );
 }
