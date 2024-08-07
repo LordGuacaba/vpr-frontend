@@ -1,16 +1,16 @@
 import './App.css';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import axios from "axios";
-import { Button, Typography } from '@mui/material';
+import { Button, Container, Stack, TextField, Typography } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton'
 
 function App() {
 
   const [outputName, setOutputName] = useState("")
   const [file, setFile] = useState()
-  const [downloadLink, setDownloadLink] = useState("")
   const [loading, setLoading] = useState(false)
   const [downloadReady, setDownloadReady] = useState(false)
+  const downloadLink = useRef("")
   const baseUrl = "http://localhost:8000";
 
   const handleAddFile = e => {
@@ -23,13 +23,13 @@ function App() {
 
   const handleDownload = () => {
     const link = document.createElement('a')
-    link.href = downloadLink
+    link.href = downloadLink.current
     link.setAttribute('download', `${outputName || "expanded"}.pptx`)
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(downloadLink)
-    setDownloadLink("")
+    URL.revokeObjectURL(downloadLink.current)
+    downloadLink.current = ""
     setDownloadReady(false)
   }
 
@@ -40,7 +40,7 @@ function App() {
     axios.get(`${baseUrl}/presentation/${filename}`, {responseType: 'blob'})
     .then(response => {
       if (response.status === 200) {
-        setDownloadLink(URL.createObjectURL(response.data))
+        downloadLink.current = URL.createObjectURL(response.data)
         setLoading(false)
         setDownloadReady(true)
         axios.delete(`${baseUrl}/presentation/${outputName || "expanded"}`)
@@ -70,14 +70,18 @@ function App() {
 
   return (
     <div className="App">
-      <Typography variant={'h2'}>Visual Packet Reader</Typography>
-      <form onSubmit={handleFileSubmission}>
-        <Typography variant='h6'>File Submission</Typography>
-        <input type="file" onChange={handleAddFile} />
-        <input type="text" onChange={handleNameChange} />
-        <Button variant="contained" type="submit">Create Powerpoint</Button>
-      </form>
-      <LoadingButton variant="outlined" loading={loading} disabled={!downloadReady} onClick={handleDownload}>Download</LoadingButton>
+      <Typography variant={'h2'} sx={{fontFamily: 'serif', fontWeight: 'bold'}}>Visual Packet Reader</Typography>
+      <Container maxWidth={'sm'}>
+        <form onSubmit={handleFileSubmission}>
+          <Stack spacing={2} sx={{mb: 3}}>
+            <Typography variant='h6'>File Submission</Typography>
+            <input type="file" onChange={handleAddFile} />
+            <TextField label="Packet Name" onChange={handleNameChange} />
+            <Button variant="contained" type="submit" sx={{color: 'primary'}}>Create Powerpoint</Button>
+          </Stack>
+        </form>
+        </Container>
+        <LoadingButton variant="outlined" loading={loading} disabled={!downloadReady} onClick={handleDownload}>Download</LoadingButton>
     </div>
   );
 }
