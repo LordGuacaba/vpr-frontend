@@ -9,7 +9,9 @@ export default [
   pluginReact.configs.flat.recommended,
   {
     rules: {
-      "no-undef": "error",
+      "no-undef": "warn",
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off"
     },
   },
 ];

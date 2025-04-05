@@ -1,7 +1,7 @@
 import "./App.css";
 import { useRef, useState } from "react";
 import axios from "axios";
-import { Button, Container, createTheme, Stack, TextField, Typography } from "@mui/material";
+import { Button, Container, createTheme, Stack, TextField, ThemeProvider, Typography } from "@mui/material";
 import LoadingButton from "@mui/lab/LoadingButton";
 import { orange } from "@mui/material/colors";
 
@@ -24,7 +24,8 @@ function App() {
   };
 
   const handleNameChange = (e) => {
-    setOutputName(e.target.value);
+    const cleanName = e.target.value.replaceAll(/[^a-z0-9_-]/gi, '')
+    setOutputName(cleanName);
   };
 
   const handleDownload = () => {
@@ -78,6 +79,7 @@ function App() {
   };
 
   return (
+    <ThemeProvider theme={theme}>
     <div className="App">
       <Typography
         variant={"h2"}
@@ -106,6 +108,7 @@ function App() {
         Download
       </LoadingButton>
     </div>
+    </ThemeProvider>
   );
 }
 
